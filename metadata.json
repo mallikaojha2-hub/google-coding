@@ -1,0 +1,6 @@
+{
+  "name": "Community Hero App",
+  "description": "Multi-user civic accountability platform with interactive clustered map, automated AI triage, admin moderation queue, and gamified perpetual civic milestone hub.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
