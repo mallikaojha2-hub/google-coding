@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CrowdfundWallet, SocialDrive, UserProfile } from '../types';
-import { Award, Trophy, ShieldCheck, DollarSign, FileText, Calendar, MapPin, CheckCircle2, XCircle, Camera, Upload, ChevronRight, Zap, Users } from 'lucide-react';
+import { Award, Trophy, ShieldCheck, DollarSign, FileText, Calendar, MapPin, CheckCircle2, XCircle, Camera, Upload, ChevronRight, Zap, Users, Plus } from 'lucide-react';
 
 interface Screen4CivicGuildProps {
   currentUser: UserProfile;
@@ -11,6 +11,7 @@ interface Screen4CivicGuildProps {
   onClaimReward: () => void;
   onRsvpDrive: (driveId: string, status: 'attending' | 'cannot_attend') => void;
   onUploadDriveProof: (driveId: string, photoUrl: string, userLat: number, userLng: number) => void;
+  onCreateDrive: (title: string, description: string, date: string, locationName?: string) => void;
 }
 
 export const Screen4CivicGuild: React.FC<Screen4CivicGuildProps> = ({
@@ -21,13 +22,57 @@ export const Screen4CivicGuild: React.FC<Screen4CivicGuildProps> = ({
   leaderboard,
   onClaimReward,
   onRsvpDrive,
-  onUploadDriveProof
+  onUploadDriveProof,
+  onCreateDrive
 }) => {
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [activeDriveProof, setActiveDriveProof] = useState<string | null>(null);
   const [proofLat, setProofLat] = useState(28.6139);
   const [proofLng, setProofLng] = useState(77.2090);
   const [isSimulatingOutsideGeofence, setIsSimulatingOutsideGeofence] = useState(false);
+
+  // States for creating community notices
+  const [showCreateNoticeModal, setShowCreateNoticeModal] = useState(false);
+  const [newNoticeTitle, setNewNoticeTitle] = useState('');
+  const [newNoticeDescription, setNewNoticeDescription] = useState('');
+  const [newNoticeDate, setNewNoticeDate] = useState('');
+  const [newNoticeTime, setNewNoticeTime] = useState('');
+  const [newNoticeLocation, setNewNoticeLocation] = useState('');
+
+  const handleCreateNoticeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNoticeTitle || !newNoticeDescription || !newNoticeDate || !newNoticeTime) {
+      alert('Please fill out all required fields.');
+      return;
+    }
+    
+    // Combine Date and Time nicely
+    // e.g. "Sunday, July 5, 2026 @ 7:30 AM" or if they select date picker "2026-07-05 @ 07:30"
+    const formattedDate = new Date(newNoticeDate).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    
+    // Convert 24h format to 12h AM/PM format
+    const [hoursStr, minutesStr] = newNoticeTime.split(':');
+    const hours = parseInt(hoursStr, 10);
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    const formattedTime = `${displayHours}:${minutesStr} ${ampm}`;
+
+    const dateTimeStr = `${formattedDate} @ ${formattedTime}`;
+    onCreateDrive(newNoticeTitle, newNoticeDescription, dateTimeStr, newNoticeLocation || undefined);
+    
+    // Reset fields
+    setNewNoticeTitle('');
+    setNewNoticeDescription('');
+    setNewNoticeDate('');
+    setNewNoticeTime('');
+    setNewNoticeLocation('');
+    setShowCreateNoticeModal(false);
+  };
 
   // Time-Independent Perpetual Progression Equation
   const calculatedTotalScore = (currentUser.cumulativeXP + currentUser.verifiedVotesReceived) - currentUser.negativePenalties;
@@ -243,7 +288,7 @@ export const Screen4CivicGuild: React.FC<Screen4CivicGuildProps> = ({
 
           {/* SECTION 3: NOTICE BOARD & RSVP SOCIAL DRIVE FEED */}
           <div className="pt-6 border-t border-gray-200 space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
               <div>
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
                   <Calendar className="w-4 h-4 text-amber-500" />
@@ -251,7 +296,16 @@ export const Screen4CivicGuild: React.FC<Screen4CivicGuildProps> = ({
                 </h4>
                 <p className="text-sm font-bold text-[#1A1A1A] mt-0.5">Physical Safety & Cleanliness RSVP Feeds</p>
               </div>
-              <span className="text-xs text-gray-400 font-mono">Radius Geofence Enforcement Active</span>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowCreateNoticeModal(true)}
+                  className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Create Notice</span>
+                </button>
+                <span className="text-xs text-gray-400 font-mono hidden md:inline">Radius Geofence Enforcement Active</span>
+              </div>
             </div>
 
             {socialDrives.map(drive => {
@@ -425,6 +479,99 @@ export const Screen4CivicGuild: React.FC<Screen4CivicGuildProps> = ({
                 Close Receipts Ledger
               </button>
             </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* --- CREATE COMMUNITY NOTICE MODAL --- */}
+      {showCreateNoticeModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 md:p-8 border border-gray-200 shadow-2xl space-y-6 animate-slide-up max-h-[90vh] flex flex-col">
+            
+            <div className="flex justify-between items-center border-b border-gray-100 pb-4 shrink-0">
+              <div className="flex items-center gap-2 text-blue-700">
+                <Calendar className="w-6 h-6 text-blue-600" />
+                <h3 className="text-lg font-bold">Post New Community Notice</h3>
+              </div>
+              <button onClick={() => setShowCreateNoticeModal(false)} className="text-gray-400 hover:text-gray-700 font-bold text-sm">✕</button>
+            </div>
+
+            <form onSubmit={handleCreateNoticeSubmit} className="flex-1 overflow-y-auto space-y-4 pr-1">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Drive Title *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Cleanliness & Recycling Drive"
+                  value={newNoticeTitle}
+                  onChange={(e) => setNewNoticeTitle(e.target.value)}
+                  className="w-full bg-[#F1F3F6] border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Description *</label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="Describe the drive, what volunteers should bring, goals, etc."
+                  value={newNoticeDescription}
+                  onChange={(e) => setNewNoticeDescription(e.target.value)}
+                  className="w-full bg-[#F1F3F6] border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase">Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={newNoticeDate}
+                    onChange={(e) => setNewNoticeDate(e.target.value)}
+                    className="w-full bg-[#F1F3F6] border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase">Time *</label>
+                  <input
+                    type="time"
+                    required
+                    value={newNoticeTime}
+                    onChange={(e) => setNewNoticeTime(e.target.value)}
+                    className="w-full bg-[#F1F3F6] border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Location / Meet Point</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Sector-4 Community Park Entrance"
+                  value={newNoticeLocation}
+                  onChange={(e) => setNewNoticeLocation(e.target.value)}
+                  className="w-full bg-[#F1F3F6] border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 flex justify-end gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateNoticeModal(false)}
+                  className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm"
+                >
+                  Post Notice Drive
+                </button>
+              </div>
+            </form>
 
           </div>
         </div>

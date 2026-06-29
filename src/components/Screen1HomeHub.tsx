@@ -68,6 +68,46 @@ export const Screen1HomeHub: React.FC<Screen1HomeHubProps> = ({
     return Math.max(0, Math.round(30 - elapsed));
   };
 
+  const getEstimatedCompletionDate = (ticket: Ticket) => {
+    const baseDays = {
+      'Potholes': 7,
+      'Water Leakage': 3,
+      'Damaged Streetlights': 2,
+      'Waste Management': 1
+    }[ticket.category] || 4;
+
+    let factor = 1.0;
+    if (ticket.milestoneProgress === 1) factor = 0.5;
+    if (ticket.milestoneProgress === 2) factor = 0.2;
+
+    const remainingDays = Math.max(1, Math.round(baseDays * factor));
+    const start = ticket.createdAt ? new Date(ticket.createdAt) : new Date();
+    const estDate = new Date(start.getTime() + remainingDays * 24 * 60 * 60 * 1000);
+    
+    return estDate.toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const getRemainingDaysText = (ticket: Ticket) => {
+    const baseDays = {
+      'Potholes': 7,
+      'Water Leakage': 3,
+      'Damaged Streetlights': 2,
+      'Waste Management': 1
+    }[ticket.category] || 4;
+
+    let factor = 1.0;
+    if (ticket.milestoneProgress === 1) factor = 0.5;
+    if (ticket.milestoneProgress === 2) factor = 0.2;
+
+    const remainingDays = Math.max(1, Math.round(baseDays * factor));
+    return `${remainingDays} ${remainingDays === 1 ? 'day' : 'days'} remaining`;
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
       
@@ -339,6 +379,25 @@ export const Screen1HomeHub: React.FC<Screen1HomeHubProps> = ({
                       </div>
                     );
                   })}
+                </div>
+
+                {/* Estimated Completion Section */}
+                <div id="estimated-completion-container" className="pt-4 border-t border-blue-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-blue-600 shrink-0" />
+                    <div>
+                      <span className="text-gray-500 font-medium">Estimated Completion: </span>
+                      <strong className="text-blue-900 font-bold">{getEstimatedCompletionDate(activeTicket)}</strong>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold rounded-full uppercase border border-emerald-200">
+                      On Track
+                    </span>
+                    <span className="text-gray-400 font-mono text-[10px]">
+                      ({getRemainingDaysText(activeTicket)})
+                    </span>
+                  </div>
                 </div>
               </div>
 

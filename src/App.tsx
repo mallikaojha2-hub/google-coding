@@ -238,6 +238,35 @@ export default function App() {
     }
   };
 
+  const handleCreateDrive = async (title: string, description: string, date: string, locationName?: string) => {
+    if (!appState) return;
+
+    try {
+      const res = await fetch('/api/drives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          description,
+          date,
+          locationName,
+          pincode: appState.activePincode
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(`❌ ${data.error || 'Failed to create community drive'}`);
+        return;
+      }
+      if (data.success) {
+        alert('🎉 Upcoming Community Drive Created and Posted to Notice Board!');
+        fetchGlobalState(appState.activePincode, appState.currentUser.role);
+      }
+    } catch (e) {
+      console.error('Failed to create drive:', e);
+    }
+  };
+
   const handleClaimReward = async () => {
     if (!appState) return;
     try {
@@ -331,6 +360,7 @@ export default function App() {
             onClaimReward={handleClaimReward}
             onRsvpDrive={handleRsvpDrive}
             onUploadDriveProof={handleUploadDriveProof}
+            onCreateDrive={handleCreateDrive}
           />
         )}
       </main>

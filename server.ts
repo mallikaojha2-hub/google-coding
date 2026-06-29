@@ -1,15 +1,16 @@
 import express from 'express';
 import { GoogleGenAI } from '@google/genai';
 import path from 'path';
+import { Ticket } from './src/types';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json({ limit: '50mb' }));
 
 // --- IN-MEMORY DATABASE MOCK FOR CIVIC PLATFORM ---
 
-let mockTickets = [
+let mockTickets: Ticket[] = [
   {
     id: 'TICK-101',
     pincode: '110001',
@@ -504,6 +505,29 @@ app.post('/api/tickets/:id/advance', (req, res) => {
 });
 
 // RSVP social drive
+app.post('/api/drives', (req, res) => {
+  const { title, description, date, locationName, pincode } = req.body;
+  if (!title || !description || !date) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  const newDrive = {
+    id: `DRV-${Date.now()}`,
+    pincode: pincode || '110001',
+    title,
+    description,
+    date,
+    locationName: locationName || 'Community Center Area',
+    geofenceCenter: { lat: 28.6139, lng: 77.2090 },
+    geofenceRadiusMeters: 500,
+    rsvps: [],
+    executionPhotos: []
+  };
+
+  mockSocialDrives.unshift(newDrive);
+  res.json({ success: true, drive: newDrive, socialDrives: mockSocialDrives });
+});
+
 app.post('/api/drives/:id/rsvp', (req, res) => {
   const driveId = req.params.id;
   const { userId, status } = req.body;
